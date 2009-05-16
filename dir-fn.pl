@@ -5,11 +5,21 @@
 # -c ... check
 # -r ... run [default]
 
+# Filename [99-xxxxxx.mp3]
+$hidden_mode = 1;
+
+#Windows Filename
+$wmark = << "EOF";
+!#$％＆’（）＝ー＾｛｝＿
+EOF
+$smark = << "EOF";
+!#$%&\'()=-^{}_
+EOF
+
+#----------------------
 
 use File::Basename;
 use Jcode;
-
-#----------------------
 
 $arg_dir = $ARGV[0];
 $mode = $ARGV[1];
@@ -57,22 +67,26 @@ sub sub_file
 {
 	local($file) = $_[0];
 	
-#	print "$fileです \n";		##DEBUG
 	$fname = basename($file);
 	$cname = $fname;
 #	$bname = basename($file, ".mp3");
 
-	#rename
+#filename starting "99-"
+	return if ($hidden_mode and $fname !~ m/^([0-9][0-9])-(.*)(mp3)$/);
+
+#Convert
 	$cname =~ s/\(/[/g;
 	$cname =~ s/\)/]/g;
 	$cname =~ s/'//g;
 	$cname =~ s/\s/_/g;
-	$sjname = &esc_filename($cname);
+	$cname = Jcode->new($cname,"euc")->tr($wmark, $smark)->sjis;
+	$euc_name = &esc_filename($cname);
 
+#mode_check ... rename
 	if ($mode eq "-c") {
-		print "Convert Image ===> $sjname\n";
+		print "Convert Image ===> $euc_name\n";
 	} elsif ($mode eq "-r" or $mode eq "") {
-		print "Converted ... $sjname ...";
+		print "Converted ... $euc_name ...";
 		rename($fname, $cname);
 		if ($?) {
 			print("NG\n");
