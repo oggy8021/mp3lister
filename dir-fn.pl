@@ -21,6 +21,9 @@ EOF
 
 use File::Basename;
 use Jcode;
+use Encode;
+use Encode::Guess;
+#binmode STDOUT,":encoding(euc-jp)";
 
 $arg_dir = $ARGV[0];
 $mode = $ARGV[1];
@@ -76,6 +79,20 @@ sub sub_file
 	local($file) = $_[0];
 	
 	$fname = basename($file);
+	Encode::Guess->set_suspects( qw/ utf8 euc-jp shiftjis cp932 / );
+	$aft = guess_encoding($file);
+	if (! ref($aft)) {
+		print  "Can't guess: \"$aft\"\n";
+	} else {
+		print  "encoding is ", $aft->name, "\n";
+	}
+
+	$aft = guess_encoding($fname);
+	if (! ref($aft)) {
+		print  "Can't guess: \"$aft\"\n";
+	} else {
+		print  "encoding is ", $aft->name, "\n";
+	}
 
 #filename starting "99-"
 	return if ($hidden_mode and $fname !~ m/^([0-9][0-9])-(.*)(mp3)$/);
@@ -94,7 +111,12 @@ sub sub_file
 
 #mode_check ... rename
 	if ($mode eq "-c") {
-		print "Convert Image ===> $tmp_name\n";
+#		print "Convert Image ===> $tmp_name\n";
+		if (! ref($aft)) {
+			print "\tConvert Image ===> $tmp_name\n";
+		} else {
+			print "Convert Image ===> $tmp_name\n";
+		}
 	} elsif ($mode eq "-r") {
 		print "Converted ... $euc_name ...";
 		rename($fname, $sj_name);
