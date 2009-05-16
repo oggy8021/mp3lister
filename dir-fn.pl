@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
-# perl dir_fn.pl [Directory]
+# perl dir_fn.pl [Directory] [mode]
+# mode as
+# -c ... check
+# -r ... run [default]
 
 
 use File::Basename;
@@ -9,6 +12,7 @@ use Jcode;
 #----------------------
 
 $arg_dir = $ARGV[0];
+$mode = $ARGV[1];
 
 &start($arg_dir);
 
@@ -64,9 +68,20 @@ sub sub_file
 	$cname =~ s/'//g;
 	$cname =~ s/\s/_/g;
 	$sjname = &esc_filename($cname);
-#	print "\t$fname => $cname, $sjname\n";		##DEBUG
-	print "\t$fname => $sjname\n";		##DEBUG
-#	rename($fname, $cname) || die("Can not change File Name");
+
+	if ($mode eq "-c") {
+		print "Convert Image ===> $sjname\n";
+	} elsif ($mode eq "-r" or $mode eq "") {
+		print "Converted ... $sjname ...";
+		rename($fname, $cname);
+		if ($?) {
+			print("NG\n");
+		} else {
+			print("OK\n");
+		}
+	} else {
+		die "Miss mode setting error\n";
+	}
 
 }
 
@@ -76,10 +91,7 @@ sub esc_filename
 
 #	my $mcode = 'sjis'; ## sjis, euc, jis
 	my $mcode = 'euc';
-#	my $forbedden = '\\\/\*\?\|"<>:,;% ';
-#	my $filename = @_;
 	$filename = Jcode::convert($filename, $mcode);
-#	$filename =~ s/([$forbedden])/'%' . unpack('H2', $1)/eg;
 	return $filename;
 }
 
