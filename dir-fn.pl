@@ -4,24 +4,27 @@
 
 
 use File::Basename;
+use File::Find;
 
 #----------------------
 
-$arg_dir = $ARGV[0];
+@search_dirs = $ARGV[0];
 
-&start($arg_dir);
+find(\&mp3files, @search_dirs);
 
-sub start
+sub mp3files
 {
-	local($dir) = $_[0];
+	next if (($_ eq '.') or ($_ eq '..'));
+	next if ($_ =~ m/^(_Single|_single|Single)$/);
 
-	$dir =~ s/\s/\\ /g;
+	$fname =  $File::Find::name;
+	$cname = $fname;
 
-	opendir(DIR, $dir) || die("Can not Open Directory : $dir");
-	my @dir = readdir(DIR);
-	foreach (@dir) {
-		print "$_\n";
-	}
-	closedir(DIR);
+	$cname =~ s/\(/[/g;
+	$cname =~ s/\)/]/g;
+	$cname =~ s/'//g;
+	$cname =~ s/\s/_/g;
+#	print "$fname => $cname\n";		##DEBUG
+	print "===> $cname\n";		##DEBUG
+#	rename($fname, $cname) || die("Can not change File Name");
 }
-
