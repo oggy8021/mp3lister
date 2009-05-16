@@ -4,15 +4,16 @@
 # mode as
 # -c ... check
 # -r ... run [default]
+# -l ... list
 
 # Filename [99-xxxxxx.mp3]
 $hidden_mode = 1;
 
 #Windows Filename
-$wmark = << "EOF";
+$wmark = << 'EOF';
 !#$％＆’（）＝ー＾｛｝＿
 EOF
-$smark = << "EOF";
+$smark = << 'EOF';
 !#$%&\'()=-^{}_
 EOF
 
@@ -23,6 +24,9 @@ use Jcode;
 
 $arg_dir = $ARGV[0];
 $mode = $ARGV[1];
+$mode = "-r" if ($mode eq "");
+
+$tree = "./";
 
 &start($arg_dir);
 
@@ -57,10 +61,14 @@ sub sub_dir
 	local($dir) = $_[0];
 	
 	chdir $dir || die("Can not Change Directory : $dir");
-	print "$dir に入ります\n";
+	print " --- $dir に入ります\n" if ($mode ne "-l");
+#	print "$dir に入ります\n";	##DEBUG
+	$tree = $tree . $_ . "\/"; 
 	&start($dir);
-	print "$dir を出ます\n";
 	chdir "..";
+	print " --- $dir を出ます\n" if ($mode ne "-l");
+#	print "$dir を出ます\n";	##DEBUG
+	$tree = substr($tree, 0, rindex($tree, $dir));
 }
 
 sub sub_file
@@ -68,44 +76,37 @@ sub sub_file
 	local($file) = $_[0];
 	
 	$fname = basename($file);
-	$cname = $fname;
-#	$bname = basename($file, ".mp3");
 
 #filename starting "99-"
 	return if ($hidden_mode and $fname !~ m/^([0-9][0-9])-(.*)(mp3)$/);
 
 #Convert
-	$cname =~ s/\(/[/g;
-	$cname =~ s/\)/]/g;
-	$cname =~ s/'//g;
-	$cname =~ s/\s/_/g;
-	$cname = Jcode->new($cname,"euc")->tr($wmark, $smark)->sjis;
-	$euc_name = &esc_filename($cname);
+	$tmp_name = Jcode::convert($fname, 'euc');
+	if ($tmp_name eq "") {
+		$tmp_name = $fname;
+	} else {
+		$tmp_name =~ s/\(/[/g;
+		$tmp_name =~ s/\)/]/g;
+		$tmp_name =~ s/\'//g;
+		$tmp_name =~ s/\s/_/g;
+		$sj_name = Jcode::convert($tmp_cname, 'sjis');
+	}
 
 #mode_check ... rename
 	if ($mode eq "-c") {
-		print "Convert Image ===> $euc_name\n";
-	} elsif ($mode eq "-r" or $mode eq "") {
+		print "Convert Image ===> $tmp_name\n";
+	} elsif ($mode eq "-r") {
 		print "Converted ... $euc_name ...";
-		rename($fname, $cname);
+		rename($fname, $sj_name);
 		if ($?) {
 			print("NG\n");
 		} else {
 			print("OK\n");
 		}
+	} elsif ($mode eq "-l") {
+		print $tree . $fname . "\n";
 	} else {
 		die "Miss mode setting error\n";
 	}
 
 }
-
-sub esc_filename
-{
-	local($filename) = $_[0];
-
-#	my $mcode = 'sjis'; ## sjis, euc, jis
-	my $mcode = 'euc';
-	$filename = Jcode::convert($filename, $mcode);
-	return $filename;
-}
-
